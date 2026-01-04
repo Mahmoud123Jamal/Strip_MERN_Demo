@@ -1,4 +1,6 @@
+import React from "react";
 import type { IProduct } from "../types/product";
+import "../styles/product.css";
 
 interface ProductListProps {
   products: IProduct[];
@@ -9,19 +11,12 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
     try {
       const response = await fetch("http://localhost:3001/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),
       });
-
       const data = await response.json();
-
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert("Checkout failed");
-      }
+      if (data.url) window.location.href = data.url;
+      else alert("Checkout failed");
     } catch (error) {
       console.error("Checkout Error:", error);
       alert("internal server error");
@@ -29,50 +24,24 @@ export const ProductList: React.FC<ProductListProps> = ({ products }) => {
   };
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "20px",
-        padding: "20px",
-      }}
-    >
+    <div className="product-grid">
       {products.map((product) => (
-        <div
-          key={product._id}
-          style={{
-            border: "1px solid #ddd",
-            padding: "15px",
-            borderRadius: "8px",
-            textAlign: "center",
-          }}
-        >
-          <img
-            src={product.image}
-            alt={product.name}
-            style={{
-              width: "100%",
-              height: "200px",
-              objectFit: "cover",
-              borderRadius: "4px",
-            }}
-          />
-          <h3 style={{ margin: "10px 0" }}>{product.name}</h3>
-          <p style={{ fontWeight: "bold", color: "#2ecc71" }}>
-            Price: ${product.price}
-          </p>
+        <div key={product._id} className="product-card">
+          <div className="image-container">
+            <img
+              src={product.image}
+              alt={product.name}
+              className="product-image"
+            />
+          </div>
+
+          <h3 className="product-name">{product.name}</h3>
+
+          <p className="product-price">${product.price}</p>
 
           <button
             onClick={() => handleCheckout(product._id)}
-            style={{
-              backgroundColor: "#6772e5",
-              color: "white",
-              border: "none",
-              padding: "10px 20px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontWeight: "600",
-            }}
+            className="buy-button"
           >
             Buy Now!
           </button>
