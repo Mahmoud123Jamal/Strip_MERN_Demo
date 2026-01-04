@@ -16,7 +16,7 @@ export const checkoutController = async (req: Request, res: Response) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-
+    const clientSide = process.env.CLIENT_URL || "http://localhost:5000";
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -33,8 +33,8 @@ export const checkoutController = async (req: Request, res: Response) => {
         },
       ],
       mode: "payment",
-      success_url: `${process.env.CLIENT_URL}/success`,
-      cancel_url: `${process.env.CLIENT_URL}/cancel`,
+      success_url: `${clientSide}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${clientSide}/cancel`,
     });
 
     res.json({ url: session.url });
