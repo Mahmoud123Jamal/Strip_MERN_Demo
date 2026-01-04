@@ -5,8 +5,6 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import SuccessPage from "./pages/Success";
 import CancelPage from "./pages/Cancel";
 
-// --- 1. THE VIEW COMPONENT ---
-// Move all your state and fetching logic here.
 const StoreFront: React.FC = () => {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -36,14 +34,12 @@ const StoreFront: React.FC = () => {
 
   return (
     <div className="container">
-      <h1>Stripe demo store</h1>
+      <h1 style={{ textAlign: "center" }}>Stripe demo store</h1>
       <ProductList products={products} />
     </div>
   );
 };
 
-// --- 2. THE ROUTER DEFINITION ---
-// This MUST be outside the App component so it is stable and created only once.
 const router = createBrowserRouter([
   {
     path: "/",
@@ -59,8 +55,6 @@ const router = createBrowserRouter([
   },
 ]);
 
-// --- 3. THE ROOT APP COMPONENT ---
-// This simply provides the router to the rest of the application.
 const App: React.FC = () => {
   return <RouterProvider router={router} />;
 };
