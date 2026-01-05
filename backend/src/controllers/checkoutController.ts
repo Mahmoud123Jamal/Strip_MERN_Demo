@@ -32,6 +32,11 @@ export const checkoutController = async (req: Request, res: Response) => {
           quantity: 1,
         },
       ],
+      payment_intent_data: {
+        metadata: {
+          productId: product._id.toString(),
+        },
+      },
       mode: "payment",
       success_url: `${clientSide}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${clientSide}/cancel`,
