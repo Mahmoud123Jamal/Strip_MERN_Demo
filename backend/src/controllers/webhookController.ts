@@ -23,7 +23,7 @@ export const stripeWebhookController = (req: Request, res: Response) => {
     case "payment_intent.succeeded": {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
-      console.log("💰 Payment succeeded:", paymentIntent.id);
+      console.log(" Payment succeeded:", paymentIntent.id);
 
       const { productId } = paymentIntent.metadata;
 
@@ -34,7 +34,7 @@ export const stripeWebhookController = (req: Request, res: Response) => {
 
     case "payment_intent.payment_failed": {
       const paymentIntent = event.data.object as Stripe.PaymentIntent;
-      console.log("❌ Payment failed:", paymentIntent.id);
+      console.log(" Payment failed:", paymentIntent.id);
       break;
     }
 
