@@ -16,6 +16,7 @@ const productSchema = new Schema<Iproduct>({
     type: Number,
     default: 0,
   },
+  lockExpiresAt: { type: Date },
 });
 
 const Product = model<Iproduct>("Product", productSchema);
