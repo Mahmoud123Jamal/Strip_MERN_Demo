@@ -22,6 +22,8 @@ export const checkoutController = async (req: Request, res: Response) => {
     }
 
     product.lockedStock += 1;
+    product.lockExpiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min lock
+
     await product.save();
 
     const clientUrl: string =
