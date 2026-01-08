@@ -6,4 +6,5 @@ export interface Iproduct extends Document {
   price: number;
   stock: number;
   lockedStock: number;
+  lockExpiresAt: Date | undefined;
 }
