@@ -11,23 +11,34 @@ if (!stripe) {
 export const checkoutController = async (req: Request, res: Response) => {
   try {
     const { productId } = req.body;
-    const product = await Product.findById(productId);
 
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    const clientSide = process.env.CLIENT_URL || "http://localhost:5000";
+
+    if (product.stock - product.lockedStock <= 0) {
+      return res.status(400).json({ message: "Out of stock" });
+    }
+
+    product.lockedStock += 1;
+    await product.save();
+
+    const clientUrl: string =
+      (process.env.CLIENT_URL as string) ?? "http://localhost:5000";
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
+      mode: "payment",
       line_items: [
         {
           price_data: {
             currency: "usd",
             product_data: {
-              name: product.name as string,
-              images: [product.image as string],
+              name: product.name,
+              images: [product.image],
             },
-            unit_amount: Math.round(product.price * 100), // استخدام Math.round لضمان رقم صحيح
+            unit_amount: Math.round(product.price * 100),
           },
           quantity: 1,
         },
@@ -35,19 +46,16 @@ export const checkoutController = async (req: Request, res: Response) => {
       payment_intent_data: {
         metadata: {
           productId: product._id.toString(),
+          orderType: "guest",
         },
       },
-      mode: "payment",
-      success_url: `${clientSide}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${clientSide}/cancel`,
+      success_url: `${clientUrl}/success`,
+      cancel_url: `${clientUrl}/cancel`,
     });
 
     res.json({ url: session.url });
-  } catch (error: any) {
-    console.error("Stripe Error:", error.message);
-    res.status(500).json({
-      status: "error",
-      message: "Payment session creation failed",
-    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Checkout failed" });
   }
 };
