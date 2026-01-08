@@ -46,6 +46,8 @@ export const stripeWebhookController = async (req: Request, res: Response) => {
         if (product) {
           product.stock -= 1;
           product.lockedStock = Math.max(0, product.lockedStock - 1);
+          product.lockExpiresAt = undefined;
+
           await product.save();
         }
 
@@ -60,6 +62,7 @@ export const stripeWebhookController = async (req: Request, res: Response) => {
         const product = await Product.findById(productId);
         if (product) {
           product.lockedStock = Math.max(0, product.lockedStock - 1);
+          product.lockExpiresAt = undefined;
           await product.save();
         }
 
