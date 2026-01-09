@@ -9,7 +9,8 @@ export const createProduct = async (req: Request, res: Response) => {
       image,
       price,
       stock: stock ?? 0,
-      lockedStock: 0,
+      reserved: 0,
+      lockExpiresAt: null,
     });
 
     res.status(201).json({ status: "success", data: { product } });
