@@ -5,6 +5,6 @@ export interface Iproduct extends Document {
   image: string;
   price: number;
   stock: number;
-  lockedStock: number;
-  lockExpiresAt: Date | undefined;
+  reserved: number;
+  lockExpiresAt: Date | null;
 }
