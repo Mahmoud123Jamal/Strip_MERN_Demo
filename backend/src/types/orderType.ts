@@ -5,6 +5,7 @@ export interface IOrder extends Document {
   paymentIntentId: string;
   amount: number;
   currency: string;
-  status: string;
-  customerType: "guest" | "user";
+  status: "pending" | "paid" | "cancelled" | "expired";
+  createdAt?: Date;
+  updatedAt?: Date;
 }
