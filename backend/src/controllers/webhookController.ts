@@ -1,80 +1,79 @@
 import { Request, Response } from "express";
 import Stripe from "stripe";
-import { OrderModel } from "../models/OrderModel";
+import Order from "../models/OrderModel";
 import Product from "../models/product";
-import mongoose from "mongoose";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
 export const stripeWebhookController = async (req: Request, res: Response) => {
-  const sig = req.headers["stripe-signature"];
-
+  const sig = req.headers["stripe-signature"] as string;
   let event: Stripe.Event;
-
   try {
     event = stripe.webhooks.constructEvent(
       req.body,
-      sig as string,
+      sig,
       process.env.STRIPE_WEBHOOK_SECRET as string
     );
   } catch (err: any) {
+    console.error("Webhook signature verification failed:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   try {
     switch (event.type) {
-      case "payment_intent.succeeded": {
-        const intent = event.data.object as Stripe.PaymentIntent;
-        const { productId } = intent.metadata;
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        if (session.payment_status !== "paid") break;
+
+        const productId = session.metadata?.productId;
+        const paymentIntentId = session.payment_intent as string;
+
+        if (!productId || !paymentIntentId) break;
 
         // Idempotency
-        const exists = await OrderModel.findOne({
-          paymentIntentId: intent.id,
-        });
+        const exists = await Order.findOne({ paymentIntentId });
         if (exists) break;
 
-        await OrderModel.create({
-          product: new mongoose.Types.ObjectId(productId),
-          paymentIntentId: intent.id,
-          amount: intent.amount_received / 100,
-          currency: intent.currency,
+        //Create Order
+        await Order.create({
+          product: productId,
+          paymentIntentId,
+          amount: (session.amount_total ?? 0) / 100,
+          currency: session.currency ?? "usd",
           status: "paid",
-          customerType: "guest",
         });
 
-        const product = await Product.findById(productId);
-        if (product) {
-          product.stock -= 1;
-          product.lockedStock = Math.max(0, product.lockedStock - 1);
-          product.lockExpiresAt = undefined;
+        //Finalize stock
+        await Product.findByIdAndUpdate(productId, {
+          $inc: { reserved: -1 },
+          $unset: { lockExpiresAt: "" },
+        });
 
-          await product.save();
-        }
-
-        console.log(" Guest order created");
+        console.log("Order completed:", paymentIntentId);
         break;
       }
 
-      case "payment_intent.payment_failed": {
-        const intent = event.data.object as Stripe.PaymentIntent;
-        const productId = intent.metadata.productId;
+      case "checkout.session.expired": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const productId = session.metadata?.productId;
 
-        const product = await Product.findById(productId);
-        if (product) {
-          product.lockedStock = Math.max(0, product.lockedStock - 1);
-          product.lockExpiresAt = undefined;
-          await product.save();
-        }
+        if (!productId) break;
 
-        console.log(" Payment failed:", intent.id);
+        await Product.findByIdAndUpdate(productId, {
+          $inc: { stock: 1, reserved: -1 },
+          $unset: { lockExpiresAt: "" },
+        });
+
+        console.log("Checkout expired, stock restored");
         break;
       }
 
       default:
-        console.log(`Unhandled event type ${event.type}`);
+        console.log(`Unhandled event type: ${event.type}`);
     }
-  } catch (err) {
-    console.error("Webhook handler error:", err);
+  } catch (error: any) {
+    console.error("Webhook handler error:", error.message);
   }
 
   res.json({ received: true });
